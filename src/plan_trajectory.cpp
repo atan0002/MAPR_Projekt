@@ -1,14 +1,14 @@
 #include <rclcpp/rclcpp.hpp>
-// #include <moveit/move_group_interface/move_group_interface.h>
-// #include <moveit/robot_model_loader/robot_model_loader.h>
-// #include <moveit/robot_model/robot_model.h>
-// #include <moveit/robot_state/robot_state.h>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
+#include <moveit/robot_model/robot_model.h>
+#include <moveit/robot_state/robot_state.h>
 #include <ompl-1.6/ompl/geometric/SimpleSetup.h>
 #include <ompl-1.6/ompl/geometric/planners/rrt/RRTstar.h>
-// #include <moveit/planning_scene/planning_scene.h>
-// #include <moveit/planning_scene_interface/planning_scene_interface.h>
-// #include <moveit_visual_tools/moveit_visual_tools.h>
-// #include <moveit/kinematic_constraints/utils.h>
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <moveit/kinematic_constraints/utils.h>
 
 
 #include <ompl-1.6/ompl/base/spaces/SE3StateSpace.h>
@@ -21,7 +21,7 @@ namespace og = ompl::geometric;
 
 bool isStateValid(const ob::State *state){
 
-    return true;
+    return false;
 }
 
 
@@ -122,22 +122,22 @@ int main(int argc, char *argv[])
     RCLCPP_INFO(logger, "##########test######");
 
 
-    // using moveit::planning_interface::MoveGroupInterface;
-    // auto move_group = MoveGroupInterface(node, "ur_manipulator");
+    using moveit::planning_interface::MoveGroupInterface;
+    auto move_group = MoveGroupInterface(node, "ur_manipulator");
     RCLCPP_INFO(logger, "##########test######");
 
 
     
-    // RCLCPP_INFO(logger, "getDefaultPlanningPipelineId: %s", move_group.getDefaultPlanningPipelineId().c_str());
-    // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getPlanningFrame().c_str());
-    // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getEndEffectorLink().c_str());
+    RCLCPP_INFO(logger, "getDefaultPlanningPipelineId: %s", move_group.getDefaultPlanningPipelineId().c_str());
+    RCLCPP_INFO(logger,"Reference frame: %s", move_group.getPlanningFrame().c_str());
+    RCLCPP_INFO(logger,"Reference frame: %s", move_group.getEndEffectorLink().c_str());
 
     // og::SimpleSetup ss(move_group.getRobotModel());
-    // plan();
+    planWithSimpleSetup();
     // Set up OMPL planner przypisuje robota do ompl plannera
     // ompl::geometric::SimpleSetup ss(move_group.getRobotModel());
 
-    // // Configure OMPL planner settings
+    // Configure OMPL planner settings
     // ss.setStartAndGoalStates(start_state, goal_state);
     // // ... Set other planner parameters
 
@@ -167,10 +167,10 @@ int main(int argc, char *argv[])
     //     RCLCPP_INFO(node->get_logger(), "No solution found");
     // }
 
-    planWithSimpleSetup();
+    // planWithSimpleSetup();
 
-    rclcpp::shutdown();
-    spinner.join();
+    // rclcpp::shutdown();
+    // spinner.join();
 
 
 
