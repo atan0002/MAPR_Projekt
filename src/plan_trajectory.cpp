@@ -15,6 +15,7 @@
 #include <ompl-1.6/ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl-1.6/ompl/base/spaces/RealVectorBounds.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <typeinfo>
 
 
 namespace ob = ompl::base;
@@ -197,6 +198,7 @@ void planWithSimpleSetup()
         // print the path to screen
         // ss.simplifySolution();
         // ss.getSolutionPath().print(std::cout);
+
     }
     else{
         std::cout << "Problem has occured:" << std::endl;
@@ -207,7 +209,7 @@ void planWithSimpleSetup()
 }
 
 
-void plan(){
+ob::PathPtr plan(){
 
     auto space(std::make_shared<ob::RealVectorStateSpace>(6));
     ob::RealVectorBounds bounds(6);
@@ -255,7 +257,11 @@ void plan(){
  
         // print the path to screen
         path->print(std::cout);
+
+                
+        return path;
     }
+
 
 
 }
@@ -294,7 +300,28 @@ int main(int argc, char *argv[])
     // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getPlanningFrame().c_str());
     // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getEndEffectorLink().c_str());
 
-    plan();
+    auto path=plan();
+
+    const auto *path_ = path.get()->as<og::PathGeometric>();
+
+    for(unsigned int i=0; i<path_->getStateCount(); ++i){
+
+        const ob::State* state2 = path_->getState(i);
+
+        const auto *joint1 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(0);
+        // const auto joint2 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(1);
+        // const auto joint3 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(2);
+        // const auto joint4 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(3);
+        // const auto joint5 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(4); ,joint2->values[0],joint3->values[0],joint4->values[0],joint5->values[0],joint6->values[0]
+        // const auto joint6 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(5); , joint2: %lf , joint3: %lf , joint4: %lf, joint5: %lf, joint6 %lf
+
+        std::cout<<"test"<<std::endl;
+        // std::cout<<(double)joint1->values[0]<<std::endl;
+
+        // RCLCPP_INFO(logger,"Path %d , joint1: %f ",i,joint1->values[0]);
+
+
+    }
    
     // configure();
 
