@@ -1,25 +1,32 @@
 #include <rclcpp/rclcpp.hpp>
+
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
 #include <ompl-1.6/ompl/geometric/SimpleSetup.h>
 #include <ompl-1.6/ompl/geometric/planners/rrt/RRTstar.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
-
+// #include <moveit/moveit_msgs/DisplayTrajectory>
+// #include <moveit/moveit_msgs/RobotTrajectory>
 
 #include <ompl-1.6/ompl/base/spaces/SE3StateSpace.h>
 #include <ompl-1.6/ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl-1.6/ompl/base/spaces/RealVectorBounds.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <typeinfo>
+#include "geometry_msgs/msg/pose_stamped.h"
+#include "nav_msgs/msg/path.hpp"
+#include <vector>
 
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
+namespace rvt = rviz_visual_tools;
 
 
 int dim;
@@ -47,27 +54,7 @@ std::shared_ptr<ompl::base::StateSpace> space;
 
 bool isStateValid(const ob::State *state){
 
-    // const auto *coordX =
-    //         state->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(0);
-    // // get y coord of the robot
-    // const auto *coordY =
-    //         state->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(1);
     
-    // const auto *coordZ = state->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(2);
-
-    // //! Comment this part of the code if you'd like to use occupancy grid
-    // // define the obstacle
-    // if (coordX->values[0]<5.1&&coordX->values[0]>5.0){
-    //     if (coordY->values[0]<4.0&&coordY->values[0]>-5.0){
-
-    //         if(coordZ->values[0]<10.0&& coordZ->values[0]>-5.0){
-
-    //             return false;
-
-    //         }
-    //     }
-    // }
-
     // return true;
        // Cast the state to RealVectorStateSpace::StateType
     const auto* stateVec = state->as<ompl::base::RealVectorStateSpace::StateType>();
@@ -157,57 +144,6 @@ void configure(){
 
 
 
-void planWithSimpleSetup()
-{
-    // construct the state space we are planning in
-    auto si(std::make_shared<ob::SpaceInformation>(space));
-    // ob::RealVectorBounds bounds(3);
-    // bounds.setLow(-1);
-    // bounds.setHigh(1);
-
-    // space->setBounds(bounds);
-    // og::SimpleSetup ss(space);
-
-    si->setStateValidityChecker([](const ob::State *state) { return isStateValid(state); });
-    si->setStateValidityCheckingResolution(0.01);
-
-    // ob::ScopedState<> start(space);
-    // start.random();
-
-    // ob::ScopedState<> goal(space);
-    // goal.random();
-
-
-    auto pdef(std::make_shared<ob::ProblemDefinition>(si));
-    pdef->setStartAndGoalStates(*start.get(), *goal.get());
-
-
-   
-    // ss.setStartAndGoalStates(start, goal);
-
-    auto planner(std::make_shared<og::RRTConnect>(si));
-    // configure the planner
-    planner->setRange(maxStepLength);// max step length
-    planner->setProblemDefinition(pdef);
-    planner->setup();
-
-    ob::PlannerStatus solved =  planner->ob::Planner::solve(1.0);
-    if (solved)
-    {
-        std::cout << "Found solution:" << std::endl;
-        // print the path to screen
-        // ss.simplifySolution();
-        // ss.getSolutionPath().print(std::cout);
-
-    }
-    else{
-        std::cout << "Problem has occured:" << std::endl;
-    }
-
-
-
-}
-
 
 ob::PathPtr plan(){
 
@@ -267,6 +203,48 @@ ob::PathPtr plan(){
 }
 
 
+moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
+
+    moveit_msgs::msg::DisplayTrajectory display_trajectory;
+
+
+    
+    const auto *path_ = path.get()->as<og::PathGeometric>();
+    // og::PathGeometric path_( dynamic_cast< const og::PathGeometric& >( path));
+
+    // std::cout<<path_->getState(0)<<std::endl;
+
+    // std::vector< ob::State* > &states = path_->getState();
+    // ob::State *state;
+
+    // // moveit_msgs::RobotTrajectory
+    // //vector<float64> 
+
+    for(unsigned int i=0; i<path_->getStateCount(); ++i){
+
+        const ob::State* state = path_->getState(i);
+        moveit_msgs::msg::RobotTrajectory robot_trajectory;
+
+        auto joint1 = state->as<ob::RealVectorStateSpace::StateType>()->values[0];
+        auto joint2 = state->as<ob::RealVectorStateSpace::StateType>()->values[1];
+        auto joint3 = state->as<ob::RealVectorStateSpace::StateType>()->values[2];
+        auto joint4 = state->as<ob::RealVectorStateSpace::StateType>()->values[3];
+        auto joint5 = state->as<ob::RealVectorStateSpace::StateType>()->values[4];
+        auto joint6 = state->as<ob::RealVectorStateSpace::StateType>()->values[5];
+
+        std::cout<< "##########test3######"<<std::endl;
+
+        // jakis problem z przypisaniem wartości joint stateow do debugu
+        robot_trajectory.joint_trajectory.points.back().positions.push_back(joint1);
+        std::cout<< "##########test4######"<<std::endl;
+        display_trajectory.trajectory.push_back(robot_trajectory);
+        
+
+    }
+
+}
+
+
 
 
 int main(int argc, char *argv[])
@@ -284,86 +262,78 @@ int main(int argc, char *argv[])
                              { executor.spin(); });
 
 
-    // Next step goes here
-    // Create the MoveIt MoveGroup Interface
+  
+    const std::string PLANNING_GROUP = "ur";
+    // const std::string ROBOT_DESC="robot_description";
+    robot_model_loader::RobotModelLoader robot_model_loader(node);
+    const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
+    moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(robot_model));
+    robot_state->setToDefaultValues();
+
+    const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup("ur_manipulator");
+    // planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
+
+    const std::vector<std::string> &joint_names = joint_model_group->getVariableNames();
+
+    std::vector<double> joint_values;
+    robot_state->copyJointGroupPositions(joint_model_group, joint_values);
+    for (std::size_t i = 0; i < joint_names.size(); ++i)
+    {
+        RCLCPP_INFO(logger, "Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+    }
 
     RCLCPP_INFO(logger, "##########test######");
 
-
-    // using moveit::planning_interface::MoveGroupInterface;
-    // auto move_group = MoveGroupInterface(node, "ur_manipulator");
-    // RCLCPP_INFO(logger, "##########test######");
-
-
-    
-    // RCLCPP_INFO(logger, "getDefaultPlanningPipelineId: %s", move_group.getDefaultPlanningPipelineId().c_str());
-    // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getPlanningFrame().c_str());
-    // RCLCPP_INFO(logger,"Reference frame: %s", move_group.getEndEffectorLink().c_str());
-
+    // planowanie sciezki
     auto path=plan();
+     RCLCPP_INFO(logger, "##########test2######");
+  
+    //przeksztalcenie jej na wiadomosc do wizualizacji
+    auto disTraj=extractPath(path);
 
-    const auto *path_ = path.get()->as<og::PathGeometric>();
+ 
 
-    for(unsigned int i=0; i<path_->getStateCount(); ++i){
 
-        const ob::State* state2 = path_->getState(i);
 
-        const auto *joint1 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(0);
+
+
+    // for(unsigned int i=0; i<path_->getStateCount(); ++i){
+
+    //     const ob::State* state2 = path_->getState(i);
+
+    //     const auto *joint1 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(0);
         // const auto joint2 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(1);
         // const auto joint3 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(2);
         // const auto joint4 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(3);
         // const auto joint5 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(4); ,joint2->values[0],joint3->values[0],joint4->values[0],joint5->values[0],joint6->values[0]
         // const auto joint6 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(5); , joint2: %lf , joint3: %lf , joint4: %lf, joint5: %lf, joint6 %lf
 
-        std::cout<<"test"<<std::endl;
+        // std::cout<<"test"<<std::endl;
         // std::cout<<(double)joint1->values[0]<<std::endl;
 
         // RCLCPP_INFO(logger,"Path %d , joint1: %f ",i,joint1->values[0]);
 
 
-    }
+    // }
    
-    // configure();
+   // wizualizacja
+    moveit_visual_tools::MoveItVisualTools visual_tools{node,"shoulder_pan_joint",rviz_visual_tools::RVIZ_MARKER_TOPIC,
+    robot_model};
+    visual_tools.loadRobotStatePub("/display_planned_path");
+    visual_tools.enableBatchPublishing();
+    visual_tools.deleteAllMarkers();  // clear all old markers
+    visual_tools.trigger();
 
-    // og::SimpleSetup ss(move_group.getRobotModel());
-    // planWithSimpleSetup();
-    // Set up OMPL planner przypisuje robota do ompl plannera
-    // ompl::geometric::SimpleSetup ss(move_group.getRobotModel());
+    visual_tools.loadRemoteControl();
 
-    // Configure OMPL planner settings
-    // ss.setStartAndGoalStates(start_state, goal_state);
-    // // ... Set other planner parameters
+    visual_tools.trigger();
+ 
 
-    // // Configure the collision checker
-    // ss.setStateValidityChecker([&](const ompl::base::State* state) {
-    //     // Perform collision checking using MoveIt planning scene
-    //     // ... Implement collision checking logic using MoveIt collision objects
-    //     return isValid;
-    // });
 
-    // // Perform planning
-    // ompl::base::PlannerStatus status = ss.solve(1.0);  // Plan for 5 seconds
 
-    // if (status == ompl::base::PlannerStatus::EXACT_SOLUTION)
-    // {
-    //     // Retrieve and output the path
-    //     ompl::geometric::PathGeometric path = ss.getSolutionPath();
-    //     path.interpolate();
-    //     for (std::size_t i = 0; i < path.getStateCount(); ++i)
-    //     {
-    //         const ompl::base::State* state = path.getState(i);
-    //         // ... Convert OMPL state to MoveIt robot state and execute the trajectory
-    //     }
-    // }
-    // else
-    // {
-    //     RCLCPP_INFO(node->get_logger(), "No solution found");
-    // }
 
-    // planWithSimpleSetup();
-
-    // rclcpp::shutdown();
-    // spinner.join();
+    rclcpp::shutdown();
+    spinner.join();
 
 
 
