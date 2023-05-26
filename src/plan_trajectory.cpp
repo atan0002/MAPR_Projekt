@@ -27,6 +27,7 @@
 #include <moveit_msgs/msg/robot_state.hpp>
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 
 
 
@@ -172,7 +173,7 @@ ob::PathPtr plan(){
     start[5] = 0.0; // Joint 6 initial configuration
 
     ob::ScopedState<> goal(space);
-    goal[0] = M_PI / 2.0; // Joint 1 goal configuration
+    goal[0] = M_PI / 4.0; // Joint 1 goal configuration
     goal[1] = 0.0;        // Joint 2 goal configuration
     goal[2] = 0.0;        // Joint 3 goal configuration
     goal[3] = 0.0;        // Joint 4 goal configuration
@@ -219,7 +220,16 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
     
     auto displayTrajectoryMsg = std::make_shared<moveit_msgs::msg::DisplayTrajectory>();
 
-    for(unsigned int i=0; i<path_->getStateCount(); ++i){
+    auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
+    auto jointStateMsg = std::make_shared<sensor_msgs::msg::JointState>();
+    jointStateMsg->position = {0, 0, 0, 0,0,0};
+
+    jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
+
+
+    robotStateMsg->joint_state =*jointStateMsg;
+    // path_->getStateCount()
+    for(unsigned int i=1; i<path_->getStateCount(); ++i){
 
         const ob::State* state = path_->getState(i);
         // moveit_msgs::msg::RobotTrajectory robot_trajectory;
@@ -227,7 +237,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         
         auto robotTrajectoryMsg = std::make_shared<moveit_msgs::msg::RobotTrajectory>();
         auto jointTrajectoryMsg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
-        auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
+        // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
         
         // jointTrajectoryMsg->header.stamp = node->get_clock()->now(); 
 
@@ -245,6 +255,8 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         auto joint5 = state->as<ob::RealVectorStateSpace::StateType>()->values[4];
         auto joint6 = state->as<ob::RealVectorStateSpace::StateType>()->values[5];
 
+        std::cout<< joint1<<std::endl;
+
         point1.positions.push_back(joint1);
         point2.positions.push_back(joint2);
         point3.positions.push_back(joint3);
@@ -261,7 +273,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         jointTrajectoryMsg->points.push_back(point6);
 
 
-        robotStateMsg->joint_state.position={0,0,0,0,0,0};
+        
        
         robotTrajectoryMsg->joint_trajectory = *jointTrajectoryMsg;
 
@@ -269,6 +281,12 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         displayTrajectoryMsg->trajectory.push_back(*robotTrajectoryMsg);
 
 
+        // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
+        // robotStateMsg->joint_state.position= {joint1,joint2,joint3,joint4,joint5,joint6};
+        jointStateMsg->position = {joint1,joint2,joint3,joint4,joint5,joint6};
+
+        jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
+        robotStateMsg->joint_state =*jointStateMsg;
         std::cout<< "##########test3######"<<std::endl;
        
         // jakis problem z przypisaniem wartości joint stateow do debugu
@@ -333,7 +351,7 @@ int main(int argc, char *argv[])
  
    
    // wizualizacja
-    moveit_visual_tools::MoveItVisualTools visual_tools{node,"shoulder_pan_joint",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
+    moveit_visual_tools::MoveItVisualTools visual_tools{node,"base_link",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
     
     // visual_tools.loadRobotStatePub("/display_planned_path");
     // visual_tools.enableBatchPublishing();
@@ -343,13 +361,14 @@ int main(int argc, char *argv[])
     visual_tools.loadRemoteControl();
 
     // visual_tools.trigger();
-    rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 1);
+    rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 100);
     display_publisher->publish(disTraj);
-    visual_tools.publishTrajectoryLine(disTraj.trajectory.back(), joint_model_group);
+    
+    for(int i =0; i<disTraj.trajectory.size();i++){
+        visual_tools.publishTrajectoryLine(disTraj.trajectory[i], joint_model_group);
+
     visual_tools.trigger();
- 
-
-
+    }
 
 
     rclcpp::shutdown();
