@@ -22,6 +22,12 @@
 #include "geometry_msgs/msg/pose_stamped.h"
 #include "nav_msgs/msg/path.hpp"
 #include <vector>
+#include <moveit_msgs/msg/display_trajectory.hpp>
+#include <moveit_msgs/msg/robot_trajectory.hpp>
+#include <moveit_msgs/msg/robot_state.hpp>
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 
 
 namespace ob = ompl::base;
@@ -220,10 +226,26 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
     // // moveit_msgs::RobotTrajectory
     // //vector<float64> 
 
+    auto displayTrajectoryMsg = std::make_shared<moveit_msgs::msg::DisplayTrajectory>();
+
     for(unsigned int i=0; i<path_->getStateCount(); ++i){
 
         const ob::State* state = path_->getState(i);
-        moveit_msgs::msg::RobotTrajectory robot_trajectory;
+        // moveit_msgs::msg::RobotTrajectory robot_trajectory;
+        // trajectory_msgs::msg::JointTrajectoryPoint traj_point;
+        
+        auto robotTrajectoryMsg = std::make_shared<moveit_msgs::msg::RobotTrajectory>();
+        auto jointTrajectoryMsg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+        auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
+        
+        // jointTrajectoryMsg->header.stamp = node->get_clock()->now(); 
+
+        trajectory_msgs::msg::JointTrajectoryPoint point1; 
+        trajectory_msgs::msg::JointTrajectoryPoint point2; 
+        trajectory_msgs::msg::JointTrajectoryPoint point3; 
+        trajectory_msgs::msg::JointTrajectoryPoint point4; 
+        trajectory_msgs::msg::JointTrajectoryPoint point5; 
+        trajectory_msgs::msg::JointTrajectoryPoint point6; 
 
         auto joint1 = state->as<ob::RealVectorStateSpace::StateType>()->values[0];
         auto joint2 = state->as<ob::RealVectorStateSpace::StateType>()->values[1];
@@ -232,15 +254,41 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         auto joint5 = state->as<ob::RealVectorStateSpace::StateType>()->values[4];
         auto joint6 = state->as<ob::RealVectorStateSpace::StateType>()->values[5];
 
-        std::cout<< "##########test3######"<<std::endl;
-
-        // jakis problem z przypisaniem wartości joint stateow do debugu
-        robot_trajectory.joint_trajectory.points.back().positions.push_back(joint1);
-        std::cout<< "##########test4######"<<std::endl;
-        display_trajectory.trajectory.push_back(robot_trajectory);
+        point1.positions.push_back(joint1);
+        point2.positions.push_back(joint2);
+        point3.positions.push_back(joint3);
+        point4.positions.push_back(joint4);
+        point5.positions.push_back(joint5);
+        point6.positions.push_back(joint6);
         
 
+        jointTrajectoryMsg->points.push_back(point1);
+        jointTrajectoryMsg->points.push_back(point2);
+        jointTrajectoryMsg->points.push_back(point3);
+        jointTrajectoryMsg->points.push_back(point4);
+        jointTrajectoryMsg->points.push_back(point5);
+        jointTrajectoryMsg->points.push_back(point6);
+
+
+        robotStateMsg->joint_state.position={0,0,0,0,0,0};
+       
+        robotTrajectoryMsg->joint_trajectory = *jointTrajectoryMsg;
+
+        displayTrajectoryMsg->trajectory_start = *robotStateMsg;
+        displayTrajectoryMsg->trajectory.push_back(*robotTrajectoryMsg);
+
+
+        std::cout<< "##########test3######"<<std::endl;
+       
+        // jakis problem z przypisaniem wartości joint stateow do debugu
+        // traj_point.positions.push_back(joint1);
+        // robot_trajectory.joint_trajectory=traj_point;
+        // std::cout<< "##########test4######"<<std::endl;
+        // display_trajectory.trajectory.push_back(robot_trajectory);
+        
     }
+
+    return *displayTrajectoryMsg;
 
 }
 
