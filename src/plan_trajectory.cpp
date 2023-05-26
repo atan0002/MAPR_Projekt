@@ -216,16 +216,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
 
     
     const auto *path_ = path.get()->as<og::PathGeometric>();
-    // og::PathGeometric path_( dynamic_cast< const og::PathGeometric& >( path));
-
-    // std::cout<<path_->getState(0)<<std::endl;
-
-    // std::vector< ob::State* > &states = path_->getState();
-    // ob::State *state;
-
-    // // moveit_msgs::RobotTrajectory
-    // //vector<float64> 
-
+    
     auto displayTrajectoryMsg = std::make_shared<moveit_msgs::msg::DisplayTrajectory>();
 
     for(unsigned int i=0; i<path_->getStateCount(); ++i){
@@ -340,40 +331,21 @@ int main(int argc, char *argv[])
     auto disTraj=extractPath(path);
 
  
-
-
-
-
-
-    // for(unsigned int i=0; i<path_->getStateCount(); ++i){
-
-    //     const ob::State* state2 = path_->getState(i);
-
-    //     const auto *joint1 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(0);
-        // const auto joint2 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(1);
-        // const auto joint3 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(2);
-        // const auto joint4 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(3);
-        // const auto joint5 =  state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(4); ,joint2->values[0],joint3->values[0],joint4->values[0],joint5->values[0],joint6->values[0]
-        // const auto joint6 = state2->as<ob::CompoundState>()->as<ob::RealVectorStateSpace::StateType>(5); , joint2: %lf , joint3: %lf , joint4: %lf, joint5: %lf, joint6 %lf
-
-        // std::cout<<"test"<<std::endl;
-        // std::cout<<(double)joint1->values[0]<<std::endl;
-
-        // RCLCPP_INFO(logger,"Path %d , joint1: %f ",i,joint1->values[0]);
-
-
-    // }
    
    // wizualizacja
-    moveit_visual_tools::MoveItVisualTools visual_tools{node,"shoulder_pan_joint",rviz_visual_tools::RVIZ_MARKER_TOPIC,
-    robot_model};
-    visual_tools.loadRobotStatePub("/display_planned_path");
-    visual_tools.enableBatchPublishing();
+    moveit_visual_tools::MoveItVisualTools visual_tools{node,"shoulder_pan_joint",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
+    
+    // visual_tools.loadRobotStatePub("/display_planned_path");
+    // visual_tools.enableBatchPublishing();
     visual_tools.deleteAllMarkers();  // clear all old markers
-    visual_tools.trigger();
+    // visual_tools.trigger();
 
     visual_tools.loadRemoteControl();
 
+    // visual_tools.trigger();
+    rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 1);
+    display_publisher->publish(disTraj);
+    visual_tools.publishTrajectoryLine(disTraj.trajectory.back(), joint_model_group);
     visual_tools.trigger();
  
 
