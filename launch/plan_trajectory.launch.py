@@ -64,7 +64,7 @@ def get_robot_description():
             "ur",
             " ",
             "ur_type:=",
-            "ur3e",
+            "ur5",
             " ",
             "prefix:=",
             '""',

@@ -13,11 +13,12 @@
 #include <moveit/kinematic_constraints/utils.h>
 // #include <moveit/moveit_msgs/DisplayTrajectory>
 // #include <moveit/moveit_msgs/RobotTrajectory>
-
+#include <moveit/move_group_interface/move_group_interface.h>
 #include <ompl-1.6/ompl/base/spaces/SE3StateSpace.h>
 #include <ompl-1.6/ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl-1.6/ompl/base/spaces/RealVectorBounds.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+
 #include <typeinfo>
 #include "geometry_msgs/msg/pose_stamped.h"
 #include "nav_msgs/msg/path.hpp"
@@ -28,12 +29,13 @@
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-
+#include <moveit/planning_scene/planning_scene.h>
 
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace rvt = rviz_visual_tools;
+using moveit::planning_interface::MoveGroupInterface;
 
 
 int dim;
@@ -78,12 +80,12 @@ bool isStateValid(const ob::State *state){
     // Return true if the state is collision-free, false otherwise
 
     // Example: Check if any joint is outside its valid range
-    if (joint1 < 0.0 || joint1 > 2.0 * M_PI ||
-        joint2 < 0.0 || joint2 > 2.0 * M_PI ||
-        joint3 < 0.0 || joint3 > 2.0 * M_PI ||
-        joint4 < 0.0 || joint4 > 2.0 * M_PI ||
-        joint5 < 0.0 || joint5 > 2.0 * M_PI ||
-        joint6 < 0.0 || joint6 > 2.0 * M_PI)
+    if (joint1 < -M_PI  || joint1 >  M_PI ||
+        joint2 <  -M_PI  || joint2 >  M_PI  ||
+        joint3 <  -M_PI  || joint3 >  M_PI ||
+        joint4 < -M_PI || joint4 >  M_PI ||
+        joint5 < -M_PI || joint5 >  M_PI ||
+        joint6 < -M_PI || joint6 > M_PI)
     {
         return false; // Invalid state due to joint limits violation
     }
@@ -92,7 +94,7 @@ bool isStateValid(const ob::State *state){
     // You would need to use your own collision detection algorithm or library
 
     // Return true if the state is collision-free
-    return true;
+    return true; //colisionchecker
 
 }
 
@@ -152,7 +154,7 @@ void configure(){
 
 
 
-ob::PathPtr plan(){
+ob::PathPtr plan( std::vector<double> start_pos){
 
     auto space(std::make_shared<ob::RealVectorStateSpace>(6));
     ob::RealVectorBounds bounds(6);
@@ -163,20 +165,21 @@ ob::PathPtr plan(){
     space->setBounds(bounds);
     auto si(std::make_shared<ob::SpaceInformation>(space));
     si->setStateValidityChecker(isStateValid);
+    
 
     ob::ScopedState<> start(space);
-    start[0] = 0.0; // Joint 1 initial configuration
-    start[1] = 0.0; // Joint 2 initial configuration
-    start[2] = 0.0; // Joint 3 initial configuration
-    start[3] = 0.0; // Joint 4 initial configuration
-    start[4] = 0.0; // Joint 5 initial configuration
-    start[5] = 0.0; // Joint 6 initial configuration
+    start[0] = start_pos[0]; // Joint 1 initial configuration
+    start[1] = start_pos[1]; // Joint 2 initial configuration
+    start[2] = start_pos[2]; // Joint 3 initial configuration
+    start[3] = start_pos[3]; // Joint 4 initial configuration
+    start[4] = start_pos[4]; // Joint 5 initial configuration
+    start[5] = start_pos[5]; // Joint 6 initial configuration
 
     ob::ScopedState<> goal(space);
-    goal[0] = M_PI / 4.0; // Joint 1 goal configuration
-    goal[1] = 0.0;        // Joint 2 goal configuration
+    goal[0] =0.0; // Joint 1 goal configuration
+    goal[1] = -1.57;        // Joint 2 goal configuration
     goal[2] = 0.0;        // Joint 3 goal configuration
-    goal[3] = 0.0;        // Joint 4 goal configuration
+    goal[3] = -1.57;        // Joint 4 goal configuration
     goal[4] = 0.0;        // Joint 5 goal configuration
     goal[5] = 0.0;        // Joint 6 goal configuration;
 
@@ -210,7 +213,7 @@ ob::PathPtr plan(){
 }
 
 
-moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
+std::shared_ptr<moveit::planning_interface::MoveGroupInterface::Plan> extractPath(ob::PathPtr path,std::vector<double> start_pos ){
 
     moveit_msgs::msg::DisplayTrajectory display_trajectory;
 
@@ -222,14 +225,24 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
 
     auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
     auto jointStateMsg = std::make_shared<sensor_msgs::msg::JointState>();
-    jointStateMsg->position = {0, 0, 0, 0,0,0};
+    auto  PlanMsg= std::make_shared<moveit::planning_interface::MoveGroupInterface::Plan>();
+    
+    std::cout<<start_pos[1]<<std::endl;
+
+    
+    jointStateMsg->position ={start_pos[0],start_pos[1],start_pos[2],start_pos[3],start_pos[4],start_pos[5]};
+
 
     jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
+    PlanMsg->planning_time_=5;
 
 
     robotStateMsg->joint_state =*jointStateMsg;
+
+  
+
     // path_->getStateCount()
-    for(unsigned int i=1; i<path_->getStateCount(); ++i){
+    for(unsigned int i=0; i<2; ++i){
 
         const ob::State* state = path_->getState(i);
         // moveit_msgs::msg::RobotTrajectory robot_trajectory;
@@ -237,6 +250,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         
         auto robotTrajectoryMsg = std::make_shared<moveit_msgs::msg::RobotTrajectory>();
         auto jointTrajectoryMsg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+        
         // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
         
         // jointTrajectoryMsg->header.stamp = node->get_clock()->now(); 
@@ -272,18 +286,24 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         jointTrajectoryMsg->points.push_back(point5);
         jointTrajectoryMsg->points.push_back(point6);
 
+        jointTrajectoryMsg->joint_names={"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
+
 
         
        
         robotTrajectoryMsg->joint_trajectory = *jointTrajectoryMsg;
 
-        displayTrajectoryMsg->trajectory_start = *robotStateMsg;
-        displayTrajectoryMsg->trajectory.push_back(*robotTrajectoryMsg);
+        // displayTrajectoryMsg->trajectory_start = *robotStateMsg;
+        // displayTrajectoryMsg->trajectory.push_back(*robotTrajectoryMsg);
+        PlanMsg->start_state_=*robotStateMsg;
+        PlanMsg->trajectory_=*robotTrajectoryMsg;
+     
+
 
 
         // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
         // robotStateMsg->joint_state.position= {joint1,joint2,joint3,joint4,joint5,joint6};
-        jointStateMsg->position = {joint1,joint2,joint3,joint4,joint5,joint6};
+        jointStateMsg->position ={joint1,joint2,joint3,joint4,joint5,joint6};// {0.0,0.0,0.0,0.0,0.0,0.0};//{joint1,joint2,joint3,joint4,joint5,joint6};
 
         jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
         robotStateMsg->joint_state =*jointStateMsg;
@@ -297,7 +317,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path){
         
     }
 
-    return *displayTrajectoryMsg;
+    return PlanMsg;
 
 }
 
@@ -325,54 +345,140 @@ int main(int argc, char *argv[])
     robot_model_loader::RobotModelLoader robot_model_loader(node);
     const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
     moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(robot_model));
-    robot_state->setToDefaultValues();
+    // robot_state->setToDefaultValues();
+
+    planning_scene::PlanningScene planning_scene(robot_model);
+    moveit::core::RobotState &current_state = planning_scene.getCurrentStateNonConst();
+
+
+
+   
+    auto move_group_interface = MoveGroupInterface(node, "ur_manipulator"); //std::make_shared<MoveGroupInterface>(node, "ur_manipulator");
 
     const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup("ur_manipulator");
-    // planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
+    //  planning_scene.getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
+
+   
+
+
+   
+
+
+
+
 
     const std::vector<std::string> &joint_names = joint_model_group->getVariableNames();
 
-    std::vector<double> joint_values;
-    robot_state->copyJointGroupPositions(joint_model_group, joint_values);
-    for (std::size_t i = 0; i < joint_names.size(); ++i)
-    {
-        RCLCPP_INFO(logger, "Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
-    }
+    // auto startStates=current_state.getJointPositions(joint_model_group)
 
+  
     RCLCPP_INFO(logger, "##########test######");
 
+    std::vector<double> group_variable_values;
+    move_group_interface.getCurrentState()->copyJointGroupPositions(move_group_interface.getCurrentState()->getRobotModel()->getJointModelGroup(move_group_interface.getName()), group_variable_values);
+   
+     for (std::size_t i = 0; i < joint_names.size(); ++i)
+    {
+        RCLCPP_INFO(logger, "Joint %s: %f", joint_names[i].c_str(), group_variable_values[i]);
+    }
+
+    moveit::core::RobotState start_state(move_group_interface.getRobotModel());
+
+    start_state.setJointGroupPositions(move_group_interface.getName(), group_variable_values);
+    move_group_interface.setStartState(start_state);
+
+    std::vector<double> joint_values;
+    robot_state->setJointGroupPositions(joint_model_group, group_variable_values);
+    robot_state->copyJointGroupPositions(joint_model_group, joint_values);
+   
+    for (std::size_t i = 0; i < joint_names.size(); ++i)
+    {
+        RCLCPP_INFO(logger, "JointModelGroup Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+    }
+
+
+    // move_group_interface.setStartState();
+
+
+
     // planowanie sciezki
-    auto path=plan();
-     RCLCPP_INFO(logger, "##########test2######");
+    // auto moveit_visual_tools =moveit_visual_tools::MoveItVisualTools{node, "base_link", rviz_visual_tools::RVIZ_MARKER_TOPIC,move_group_interface->getRobotModel()};
+    // moveit_visual_tools.deleteAllMarkers();
+    // moveit_visual_tools.loadRemoteControl();
+
+    auto path=plan(group_variable_values);
+
+    auto disTraj=extractPath(path,group_variable_values);
+   
+    RCLCPP_INFO(logger, "##########test2######");
+
+
+    auto moveit_visual_tools =
+      moveit_visual_tools::MoveItVisualTools{node, "base_link", rviz_visual_tools::RVIZ_MARKER_TOPIC,
+                                             move_group_interface.getRobotModel()};
+    moveit_visual_tools.deleteAllMarkers();
+    moveit_visual_tools.loadRemoteControl();
+
+    auto const draw_trajectory_tool_path =
+      [&moveit_visual_tools, jmg = move_group_interface.getRobotModel()->getJointModelGroup("ur_manipulator")](
+          auto const trajectory)
+  { moveit_visual_tools.publishTrajectoryLine(trajectory, jmg); };
+
+    draw_trajectory_tool_path(disTraj->trajectory_);
+    move_group_interface.execute(*disTraj);
+       
+
+
   
     //przeksztalcenie jej na wiadomosc do wizualizacji
-    auto disTraj=extractPath(path);
+
+    // move_group_interface->setMaxVelocityScalingFactor(0.05);
+    // move_group_interface->setMaxAccelerationScalingFactor(0.05);
 
  
    
    // wizualizacja
-    moveit_visual_tools::MoveItVisualTools visual_tools{node,"base_link",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
+//     moveit_visual_tools::MoveItVisualTools visual_tools{node,"base_link",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
     
-    // visual_tools.loadRobotStatePub("/display_planned_path");
-    // visual_tools.enableBatchPublishing();
-    visual_tools.deleteAllMarkers();  // clear all old markers
-    // visual_tools.trigger();
+//     // visual_tools.loadRobotStatePub("/display_planned_path");
+//     // visual_tools.enableBatchPublishing();
+//     visual_tools.deleteAllMarkers();  // clear all old markers
+//     // visual_tools.trigger();
 
-    visual_tools.loadRemoteControl();
 
-    // visual_tools.trigger();
-    rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 100);
-    display_publisher->publish(disTraj);
-    
-    for(int i =0; i<disTraj.trajectory.size();i++){
-        visual_tools.publishTrajectoryLine(disTraj.trajectory[i], joint_model_group);
 
-    visual_tools.trigger();
-    }
+//     visual_tools.loadRemoteControl();
+
+//     // visual_tools.trigger();
+//     rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 100);
+//     display_publisher->publish(disTraj);
+//     // async execute/execute robot_trajectory z move_group_interface
+//    //for(int i =0; i<disTraj.trajectory.size();i++){
+//     visual_tools.publishTrajectoryLine(disTraj.trajectory.back(), joint_model_group);
+
+        
+//     //}
+//     visual_tools.trigger();
+
+    // RCLCPP_INFO(logger, "Planning frame: %s", move_group_interface.getPlanningFrame().c_str());
+    // RCLCPP_INFO(logger, "End effector link: %s", move_group_interface.getEndEffectorLink().c_str());
+    // RCLCPP_INFO(logger, "Available Planning Groups:");
+    // // std::copy(move_group_interface.getJointModelGroupNames().begin(), move_group_interface.getJointModelGroupNames().end(),std::ostream_iterator<std::string>(std::cout, ", "));
+
+
+   
+    // moveit_visual_tools.trigger();
+
+
+    // auto const ok = static_cast<bool>(move_group_interface.execute(disTraj));
+
+    // std::cout<<ok<<std::endl;
+    // RCLCPP_INFO(logger, "Error code: %s", code);
 
 
     rclcpp::shutdown();
     spinner.join();
+   
 
 
 
