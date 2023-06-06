@@ -39,9 +39,7 @@ namespace og = ompl::geometric;
 namespace rvt = rviz_visual_tools;
 
 
-int dim;
 
-    /// max step length
 double maxStepLength;
 
     /// bounds for the x axis
@@ -64,12 +62,10 @@ std::shared_ptr<ompl::base::StateSpace> space;
 
 bool isStateValid(const ob::State *state){
 
-    
-    // return true;
-       // Cast the state to RealVectorStateSpace::StateType
+
     const auto* stateVec = state->as<ompl::base::RealVectorStateSpace::StateType>();
 
-    // Extract the joint values from the state
+
     double joint1 = (*stateVec)[0];
     double joint2 = (*stateVec)[1];
     double joint3 = (*stateVec)[2];
@@ -77,10 +73,7 @@ bool isStateValid(const ob::State *state){
     double joint5 = (*stateVec)[4];
     double joint6 = (*stateVec)[5];
 
-    // Perform collision checking based on your environment or specific constraints
-    // Return true if the state is collision-free, false otherwise
-
-    // Example: Check if any joint is outside its valid range
+ 
     if (joint1 <=-M_PI/2 || joint1 >=  M_PI/2 ||
         joint2 <=-M_PI/2 || joint2 >=  M_PI/2 ||
         joint3 <=-M_PI/2 || joint3 >=  M_PI/2 ||
@@ -90,11 +83,6 @@ bool isStateValid(const ob::State *state){
     {
         return false; // Invalid state due to joint limits violation
     }
-
-    // Example: Check for collision with obstacles in the environment
-    // You would need to use your own collision detection algorithm or library
-
-    // Return true if the state is collision-free
     return true;
 
 }
@@ -144,12 +132,9 @@ ob::PathPtr plan(std::vector<double> start_){
 
     if (solved)
     {
-        // get the goal representation from the problem definition (not the same as the goal state)
-        // and inquire about the found path
+      
         ob::PathPtr path = pdef->getSolutionPath();
         std::cout << "Found solution:" << std::endl;
- 
-        // print the path to screen
         path->print(std::cout);
 
                 
@@ -182,14 +167,11 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
     for(unsigned int i=0; i<path_->getStateCount(); ++i){
 
         const ob::State* state = path_->getState(i);
-        // moveit_msgs::msg::RobotTrajectory robot_trajectory;
-        // trajectory_msgs::msg::JointTrajectoryPoint traj_point;
+;
         
         auto robotTrajectoryMsg = std::make_shared<moveit_msgs::msg::RobotTrajectory>();
         auto jointTrajectoryMsg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
-        // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
-        
-        // jointTrajectoryMsg->header.stamp = node->get_clock()->now(); 
+    
 
         trajectory_msgs::msg::JointTrajectoryPoint point1; 
         trajectory_msgs::msg::JointTrajectoryPoint point2; 
@@ -205,7 +187,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
         auto joint5 = state->as<ob::RealVectorStateSpace::StateType>()->values[4];
         auto joint6 = state->as<ob::RealVectorStateSpace::StateType>()->values[5];
 
-        std::cout<< joint1<<std::endl;
+
 
         point1.positions.push_back(joint1);
         point2.positions.push_back(joint2);
@@ -231,19 +213,14 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
         displayTrajectoryMsg->trajectory.push_back(*robotTrajectoryMsg);
 
 
-        // auto robotStateMsg = std::make_shared<moveit_msgs::msg::RobotState>();
-        // robotStateMsg->joint_state.position= {joint1,joint2,joint3,joint4,joint5,joint6};
+       
         jointStateMsg->position = {joint1,joint2,joint3,joint4,joint5,joint6};
 
         jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
         robotStateMsg->joint_state =*jointStateMsg;
         std::cout<< "##########test3######"<<std::endl;
        
-        // jakis problem z przypisaniem wartości joint stateow do debugu
-        // traj_point.positions.push_back(joint1);
-        // robot_trajectory.joint_trajectory=traj_point;
-        // std::cout<< "##########test4######"<<std::endl;
-        // display_trajectory.trajectory.push_back(robot_trajectory);
+   
         
     }
 
@@ -275,7 +252,7 @@ int main(int argc, char *argv[])
 
   
     const std::string PLANNING_GROUP = "ur";
-    // const std::string ROBOT_DESC="robot_description";
+
     robot_model_loader::RobotModelLoader robot_model_loader(node);
     const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
     moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(robot_model));
@@ -283,21 +260,12 @@ int main(int argc, char *argv[])
     planning_scene::PlanningScenePtr planning_scene(new planning_scene::PlanningScene(robot_model));
 
     const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup("ur_manipulator");
-    // planning_scene->getCurrentStateNonConst().setToDefaultValues(joint_model_group, "ready");
-
+   
     const std::vector<std::string> &joint_names = joint_model_group->getVariableNames();
 
     auto move_group_interface =  moveit::planning_interface::MoveGroupInterface(node, "ur_manipulator");
     move_group_interface.setMaxAccelerationScalingFactor(0.01);
-    
-
-
-    //proba nr 444444444
-    // auto moveit_cpp_ptr = std::make_shared<moveit_cpp::MoveItCpp>(node);
-    // moveit_cpp_ptr->getPlanningSceneMonitor()->providePlanningSceneService();
-
-
-
+ 
 
 
     std::vector<double> group_variable_values;
@@ -312,7 +280,7 @@ int main(int argc, char *argv[])
     std::vector<double> joint_values;
     robot_state->copyJointGroupPositions(joint_model_group, joint_values);
     robot_state->setJointGroupPositions(joint_model_group, group_variable_values);
-    // planning_scene->setCurrentState(*robot_state.get());
+    
     for (std::size_t i = 0; i < joint_names.size(); ++i)
     {
         RCLCPP_INFO(logger, "Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
@@ -326,28 +294,20 @@ int main(int argc, char *argv[])
     auto path=plan(group_variable_values);
      RCLCPP_INFO(logger, "##########test2######");
   
-    //przeksztalcenie jej na wiadomosc do wizualizacji
+
     auto disTraj=extractPath(path,group_variable_values);
 
-    // moveit::core::RobotState start_state(*move_group_interface.getCurrentState());
-    // move_group_interface.setStartState(start_state);
-    // move_group_interface.setStartStateToCurrentState();
-    // move_group_interface.setGoalJointTolerance(3.14);
-    
+
  
    
 //    // wizualizacja
     moveit_visual_tools::MoveItVisualTools visual_tools{node,"shoulder_pan_joint",rviz_visual_tools::RVIZ_MARKER_TOPIC,robot_model};
-    
-    // visual_tools.loadPlanningSceneMonitor();
-    // visual_tools.loadRobotStatePub("/display_planned_path");
-    // visual_tools.enableBatchPublishing();
+
     visual_tools.deleteAllMarkers();  // clear all old markers
-    // visual_tools.trigger();
+  
 
     visual_tools.loadRemoteControl();
-    // visual_tools.setPlanningSceneTopic("/move_group/monitored_planning_scene");
-
+    
     rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 2000);
     display_publisher->publish(disTraj);
 
@@ -374,52 +334,7 @@ int main(int argc, char *argv[])
       
     }
 
-  
-
-
-
-    // const std::chrono::nanoseconds time_nano=100000000;
-    //disTraj.trajectory.size();
-    
-    // auto planning_components = std::make_shared<moveit_cpp::PlanningComponent>("ur_manipulator", moveit_cpp_ptr);
-    // auto robot_model_ptr = moveit_cpp_ptr->getRobotModel();
-    // auto robot_start_state = planning_components->getStartState();
-    // auto joint_model_group_ptr = robot_model_ptr->getJointModelGroup("ur_manipulator");
-
-    // moveit_visual_tools::MoveItVisualTools visual_tools(node, "base_link",rviz_visual_tools::RVIZ_MARKER_TOPIC,
-    //                                                   moveit_cpp_ptr->getPlanningSceneMonitorNonConst());
-    // visual_tools.deleteAllMarkers();
-    // visual_tools.loadRemoteControl();
-
-    // Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    // text_pose.translation().z() = 1.75;
-    // visual_tools.publishText(text_pose, "MoveItCpp_Demo", rvt::WHITE, rvt::XLARGE);
-    // visual_tools.trigger();
-
    
-    // planning_components->setStartState(start_state);
-
-    // planning_components->setStartStateToCurrentState();
-
-    //   // Visualize the start pose in Rviz
-    // // visual_tools.publishAxisLabeled(robot_start_state->getGlobalLinkTransform(joint_names[5]), "start_pose");
-    // // // Visualize the goal pose in Rviz
-    // // visual_tools.publishAxisLabeled(target_pose1.pose, "target_pose");
-    // // visual_tools.publishText(text_pose, "setStartStateToCurrentState", rvt::WHITE, rvt::XLARGE);
-
-
-  
-    // for(int i =0; i<disTraj.trajectory.size();i++){
-    //     visual_tools.publishTrajectoryLine(disTraj.trajectory[i], joint_model_group);
-    //     // move_group_interface.execute(disTraj.trajectory[i]);
-    //     // bool blocking = true; 
-    //     //  moveit_controller_manager::ExecutionStatus result = moveit_cpp_ptr->execute(disTraj.trajectory[i], blocking, CONTROLLERS); 
-          
-    // visual_tools.trigger();
-
-    // }
-
-  
     
 
 
