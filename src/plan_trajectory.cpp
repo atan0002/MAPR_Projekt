@@ -91,7 +91,7 @@ bool isStateValid(const ob::State *state){
 
 
 
-ob::PathPtr plan(std::vector<double> start_){
+ob::PathPtr plan(std::vector<double> start_,std::vector<double> goal_){
 
     auto space(std::make_shared<ob::RealVectorStateSpace>(6));
     ob::RealVectorBounds bounds(6);
@@ -112,12 +112,12 @@ ob::PathPtr plan(std::vector<double> start_){
     start[5] = start_[5]; // Joint 6 initial configuration
 
     ob::ScopedState<> goal(space);
-    goal[0] = 0.0; // Joint 1 goal configuration
-    goal[1] = 0.0;        // Joint 2 goal configuration
-    goal[2] =1.57/2;        // Joint 3 goal configuration
-    goal[3] = 0.0;        // Joint 4 goal configuration
-    goal[4] = 0.0;        // Joint 5 goal configuration
-    goal[5] = -1.57/2;        // Joint 6 goal configuration;
+    goal[0] =goal_[0]; // Joint 1 goal configuration
+    goal[1] = goal_[1];        // Joint 2 goal configuration
+    goal[2] =goal_[2];        // Joint 3 goal configuration
+    goal[3] = goal_[3];        // Joint 4 goal configuration
+    goal[4] = goal_[4];        // Joint 5 goal configuration
+    goal[5] = goal_[5];        // Joint 6 goal configuration;
 
     auto pdef(std::make_shared<ob::ProblemDefinition>(si));
     
@@ -163,7 +163,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
 
 
     robotStateMsg->joint_state =*jointStateMsg;
-    // path_->getStateCount()
+
     for(unsigned int i=0; i<path_->getStateCount(); ++i){
 
         const ob::State* state = path_->getState(i);
@@ -218,7 +218,7 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
 
         jointStateMsg->name = {"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint","wrist_2_joint","wrist_3_joint"};
         robotStateMsg->joint_state =*jointStateMsg;
-        std::cout<< "##########test3######"<<std::endl;
+  
        
    
         
@@ -233,8 +233,8 @@ moveit_msgs::msg::DisplayTrajectory extractPath(ob::PathPtr path,std::vector<dou
 
 
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+
     rclcpp::init(argc, argv);
     auto const node = std::make_shared<rclcpp::Node>(
         "plan_trajectory",
@@ -248,7 +248,8 @@ int main(int argc, char *argv[])
                              { executor.spin(); });
 
     static const std::vector<std::string> CONTROLLERS(1, "joint_trajectory_controller");
-
+    
+    RCLCPP_INFO(logger, argv[1]);
 
   
     const std::string PLANNING_GROUP = "ur";
@@ -288,11 +289,13 @@ int main(int argc, char *argv[])
 
 
 
-    RCLCPP_INFO(logger, "##########test######");
+
+
+    std::vector<double> goal={0.0,1.57/2,0.0,0.0,-1.57/2};
 
     // planowanie sciezki
-    auto path=plan(group_variable_values);
-     RCLCPP_INFO(logger, "##########test2######");
+    auto path=plan(group_variable_values,goal);
+
   
 
     auto disTraj=extractPath(path,group_variable_values);

@@ -5,7 +5,7 @@
 ### W projekcie zostały wykorzystane narzędzia:
 
 - ROS2 Humble
-- MoveIt!
+- MoveIt
 - Biblioteka OMPL
 - RViz
 - Docker
@@ -14,10 +14,10 @@
 
 ### Opis projektu
 
- Projekt miał na celu zaimplementowanie planera z natywnym wykorzystyniem biblioteki OMPL oraz modułów MoveIt!. Pozycja zadawana jest w przestrzeni przegubów poprzez wywołanie komendy: [TU MA BYC KOMENDA]
+ Projekt miał na celu zaimplementowanie planera z natywnym wykorzystyniem biblioteki OMPL oraz modułów MoveIt. Pozycja zadawana jest w przestrzeni przegubów.
 
 
-Pozycja planowana jest poprzez funkcję plan(). Na początku inicjowana jest klasa definicji problemu do której przypisywany jest punkt startowy i końcowy. Następnie definiowany jest planer. W tym przypadku wybrany został RRTConnect. Przypisywana jest do nimego informacja o przestrzeni stanów. Następnie następuje zaplanowanie ścieżki oraz jej wyświetlenie.
+Pozycja planowana jest poprzez funkcję plan(). Na początku inicjowana jest klasa definicji problemu, do której przypisywany jest punkt startowy i końcowy. Następnie definiowany jest planer. W tym przypadku wybrany został RRTConnect. Przypisywana jest do niego informacja o przestrzeni stanów. Następnie następuje zaplanowanie ścieżki oraz jej wyświetlenie.
 
 ```cpp
 auto pdef(std::make_shared<ob::ProblemDefinition>(si));
@@ -50,9 +50,9 @@ Informacje wyśiwetlane przez funckję planującą.
 
 Następnie wykonywana jest wizualizacja. Wyznaczona ścieżka przesyłana jest na temat /display_planned_path.
 
-[tutaj gif]
 
 ### Napotkane problemy
 
-- Konflikty z podlinkowaniem biblioteki OMPL i MoveIt
-- Nie znaleziono możliwości wykorzystania metody execute() z move_group_interface.
+- Konflikty z podlinkowaniem biblioteki OMPL i MoveIt,
+- Nie znaleziono możliwości wykorzystania metody execute() z move_group_interface,
+- niezaktualizowana dokumentacja od biblioteki OMPL oraz MoveIt 
