@@ -53,7 +53,7 @@ Następnie wykonywana jest wizualizacja. Wyznaczona ścieżka przesyłana jest n
 ### Planowanie i wizualizacja za pomocą MoveIt
 Planowanie i wizualizacja odbywa się za pomocą biblioteki MoveIt w przestrzeni przegubów. Rozwiązanie to jest identyczne do wyżej opisanego, gdzie zadajemy punkt końcowy definiując wartości w przegubach. Następnie ścieżka jest planowana oraz wyświetlana w RViz.
 
-```
+```cpp
 move_group_interface.setJointValueTarget(target_joint_vals);
     auto const [success, plan] = [&move_group_interface]
     {
