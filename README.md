@@ -98,6 +98,101 @@ Informacje wyświetlane przez funkcję planującą z MoveIt:
 [plan_trajectory_with_viz-1] [INFO]: Joint wrist_3_joint: -0.784949
 ```
 
+### Uruchamianie
+Do uruchomienia symulatora należy pobrać i uruchomić obraz dockera:
+```
+https://github.com/RafalStaszak/NIMPRA_Docker
+```
+
+Budowanie obrazu dockera:
+```
+sudo docker build -t humble .
+```
+
+Konfuguracja środowiska do pracy z robotem Universal Robots UR5
+```
+export COLCON_WS=~/Shared/ros2_ws
+mkdir -p $COLCON_WS/src
+cd $COLCON_WS
+```
+```
+git clone -b ${ROS_DISTRO} https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver.git src/Universal_Robots_ROS2_Driver
+```
+```
+vcs import src --skip-existing --input src/Universal_Robots_ROS2_Driver/Universal_Robots_ROS2_Driver.${ROS_DISTRO}.repos
+```
+```
+git clone https://github.com/UniversalRobots/Universal_Robots_ROS2_Description
+```
+```
+git clone -b humble https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver
+```
+```
+git clone https://github.com/atan0002/MAPR_Projekt.git
+```
+```
+cd ~/ros2_ws
+```
+```
+apt-get update
+```
+```
+rosdep update
+```
+```
+rosdep install --ignore-src --from-paths src -y -r
+```
+```
+apt-get install ros-humble-moveit*
+```
+Należy edtować plik:
+```
+ros2_ws/src/Universal_Robots_ROS2_Driver/ur_controllers/src/scaled_joint_trajectory_controller.cpp
+```
+Z 
+```
+publish_state(time, state_desired, state_current, state_error);
+```
+Na:
+```
+publish_state(state_desired, state_current, state_error);
+
+```
+Budowanie środowiska:
+```
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+```
+source install/setup.bash
+```
+Uruchamianie symulatora:
+Symulator ursim - uruchamiać natywnie:
+```
+cd ros2_ws/src/Universal_Robots_ROS2_Driver/ur_robot_driver/scripts
+```
+```
+bash start_ursim.sh -m ur5
+```
+
+Driver:
+```
+ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5 robot_ip:=192.168.56.101 use_fake_hardware:=true launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+```
+
+MoveIt:
+```
+ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur3e launch_rviz:=true use_fake_hardware:=true
+```
+
+Planowanie za pomocą OMPL:
+```
+ros2 launch mapr_projekt2 plan_trajectory.launch.py 
+```
+Planowanie i wizualizacja za pomocą MoveIt:
+```
+ros2 launch mapr_projekt2 plan_trajectory_with_viz.launch.py 
+```
+
 
 ### Napotkane problemy
 
