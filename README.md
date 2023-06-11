@@ -50,6 +50,54 @@ Informacje wyśiwetlane przez funckję planującą.
 
 Następnie wykonywana jest wizualizacja. Wyznaczona ścieżka przesyłana jest na temat /display_planned_path.
 
+### Planowanie i wizualizacja za pomocą MoveIt
+Planowanie i wizualizacja odbywa się za pomocą biblioteki MoveIt w przestrzeni przegubów. Rozwiązanie to jest identyczne do wyżej opisanego, gdzie zadajemy punkt końcowy definiując wartości w przegubach. Następnie ścieżka jest planowana oraz wyświetlana w RViz.
+
+```
+move_group_interface.setJointValueTarget(target_joint_vals);
+    auto const [success, plan] = [&move_group_interface]
+    {
+        moveit::planning_interface::MoveGroupInterface::Plan msg;
+        auto const ok = static_cast<bool>(move_group_interface.plan(msg));
+        return std::make_pair(ok, msg);
+    }();
+
+    if (success)
+    {
+        draw_trajectory_tool_path(plan.trajectory_);
+        std::cout<<"Executing!"<<std::endl;
+        move_group_interface.execute(plan);
+    }
+    else
+        std::cout<<"Planning failed!"<<std::endl;
+```
+Informacje wyświetlane przez funkcję planującą z MoveIt:
+```
+[plan_trajectory_with_viz-1] [INFO]: ########## Joint states - start ##########
+[plan_trajectory_with_viz-1] [INFO]: Joint shoulder_pan_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Joint shoulder_lift_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Joint elbow_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_1_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_2_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_3_joint: 0.000000
+[plan_trajectory_with_viz-1] [INFO]: Ready to take commands for planning group ur_manipulator.
+[plan_trajectory_with_viz-1] [INFO]: RemoteControl Ready.
+[plan_trajectory_with_viz-1] [INFO]: MoveGroup action client/server ready
+[plan_trajectory_with_viz-1] [INFO]: Planning request accepted
+[plan_trajectory_with_viz-1] [INFO]: Planning request complete!
+[plan_trajectory_with_viz-1] [INFO]: time taken to generate plan: 0.0241243 seconds
+[plan_trajectory_with_viz-1] Executing!
+[plan_trajectory_with_viz-1] [INFO]: Execute request accepted
+[plan_trajectory_with_viz-1] [INFO]: Execute request success!
+[plan_trajectory_with_viz-1] [INFO]: ########## Joint states - goal ##########
+[plan_trajectory_with_viz-1] [INFO]: Joint shoulder_pan_joint: -0.000023
+[plan_trajectory_with_viz-1] [INFO]: Joint shoulder_lift_joint: 0.784949
+[plan_trajectory_with_viz-1] [INFO]: Joint elbow_joint: 0.000015
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_1_joint: 0.000025
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_2_joint: -0.000098
+[plan_trajectory_with_viz-1] [INFO]: Joint wrist_3_joint: -0.784949
+```
+
 
 ### Napotkane problemy
 
