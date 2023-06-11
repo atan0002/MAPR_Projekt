@@ -72,6 +72,12 @@ ament_target_dependencies(plan_trajectory moveit_common moveit_core moveit_ros_p
 target_link_libraries(plan_trajectory ${OMPL_LIBRARIES})
 
 
+add_executable(plan_trajectory_with_viz src/plan_trajectory_with_viz.cpp)
+target_include_directories(plan_trajectory_with_viz PUBLIC include)
+ament_target_dependencies(plan_trajectory_with_viz moveit_common moveit_core moveit_ros_planning moveit_ros_planning_interface rviz_visual_tools moveit_visual_tools rclcpp std_msgs ompl) #
+target_link_libraries(plan_trajectory_with_viz ${OMPL_LIBRARIES})
+
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -93,6 +99,7 @@ install(
 )
 
 install(TARGETS plan_trajectory DESTINATION lib/${PROJECT_NAME})
+install(TARGETS plan_trajectory_with_viz DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
 
