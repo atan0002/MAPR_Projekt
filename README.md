@@ -101,14 +101,9 @@ Informacje wyświetlane przez funkcję planującą z MoveIt:
 ### Uruchamianie
 Do uruchomienia symulatora należy pobrać i uruchomić obraz dockera:
 ```
-https://github.com/RafalStaszak/NIMPRA_Docker
+docker pull osrf/ros:humble-desktop
 ```
-
-Budowanie obrazu dockera:
-```
-sudo docker build -t humble .
-```
-
+Poniższe komendy wykonujemy w uruchomionym kontenerze.
 Konfuguracja środowiska do pracy z robotem Universal Robots UR5
 ```
 export COLCON_WS=~/Shared/ros2_ws
